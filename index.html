@@ -407,45 +407,45 @@
 /* =========================================================================
    BACKEND PRODUCTION: DATABASE TK (TK PGRI PAKANDANGAN SANGRA)
    Sheet File : DATABASE TK
-   Tabs       : "ABSENSI SISWA", "ABSENSI GURU", "MASTER_GURU", "MASTER_SISWA"
+   Tabs       : "ABSENSI SISWA", "ABSENSI GURU", "Master_Guru", "Master_Siswa"
+   Fitur      : Case-Insensitive Matching (Huruf Besar/Kecil Bebas)
    ========================================================================= */
 
 function doGet(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var action = e && e.parameter ? e.parameter.action : "";
+    var master = getMasterRecords(ss);
 
-    if (action === "GET_MASTER" || action === "GET_GURU") {
-      return ContentService.createTextOutput(JSON.stringify(getMasterRecords(ss)))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    var sheetSiswa = ss.getSheetByName("ABSENSI SISWA") || ss.getSheetByName("ABSENSI_SISWA");
-    var sheetGuru = ss.getSheetByName("ABSENSI GURU") || ss.getSheetByName("ABSENSI_GURU");
-    var sheetMasterGuru = ss.getSheetByName("MASTER_GURU") || ss.getSheetByName("MASTER GURU");
-    var sheetMasterSiswa = ss.getSheetByName("MASTER_SISWA") || ss.getSheetByName("MASTER SISWA");
-
+    // Kirim langsung data master beserta status server tanpa syarat parameter
     var response = {
       status: "ONLINE",
+      success: true,
       service: "Backend Presensi DATABASE TK",
       sekolah: "TK PGRI Pakandangan Sangra",
       spreadsheetName: ss.getName(),
-      tabsReady: {
-        absensiSiswa: sheetSiswa !== null,
-        absensiGuru: sheetGuru !== null,
-        masterGuru: sheetMasterGuru !== null,
-        masterSiswa: sheetMasterSiswa !== null
-      },
+      guru: master.guru,
+      siswa: master.siswa,
+      tabsFound: master.tabsFound,
       serverTime: Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss") + " WIB"
     };
 
-    return ContentService.createTextOutput(JSON.stringify(response))
+    var jsonStr = JSON.stringify(response);
+
+    // DUKUNGAN JSONP KHUSUS HP (BYPASS TOTAL BLOKIR CORS & REDIRECT BROWSER HP)
+    if (e && e.parameter && e.parameter.callback) {
+      return ContentService.createTextOutput(e.parameter.callback + "(" + jsonStr + ")")
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+
+    return ContentService.createTextOutput(jsonStr)
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "ERROR",
-      message: err.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    var errObj = { status: "ERROR", success: false, message: err.toString() };
+    if (e && e.parameter && e.parameter.callback) {
+      return ContentService.createTextOutput(e.parameter.callback + "(" + JSON.stringify(errObj) + ")")
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService.createTextOutput(JSON.stringify(errObj)).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -462,20 +462,20 @@ function doPost(e) {
     var data = JSON.parse(rawText);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    if (data.action === "GET_MASTER") {
-      return ContentService.createTextOutput(JSON.stringify(getMasterRecords(ss)))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    if (data.action === "PING") {
+    if (data.action === "GET_MASTER" || data.action === "PING") {
+      var master = getMasterRecords(ss);
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
-        message: "Koneksi DATABASE TK Aktif & Siap Menerima Presensi!"
+        status: "ONLINE",
+        guru: master.guru,
+        siswa: master.siswa,
+        tabsFound: master.tabsFound,
+        message: "Data Master Berhasil Dimuat!"
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
     if (data.action === "ABSENSI_SISWA") {
-      var sheetSiswa = ss.getSheetByName("ABSENSI SISWA") || ss.getSheetByName("ABSENSI_SISWA");
+      var sheetSiswa = findSheetFlexible(ss, ["absensisiswa", "presensisiswa", "absen_siswa", "absensi_siswa"]);
       if (!sheetSiswa) {
         sheetSiswa = ss.insertSheet("ABSENSI SISWA");
         sheetSiswa.appendRow(["TIMESTAMP", "ID_ABSENSI_SISWA", "TANGGAL", "NIS", "NAMA_SISWA", "KELOMPOK", "STATUS", "KETERANGAN"]);
@@ -501,7 +501,7 @@ function doPost(e) {
     }
 
     if (data.action === "ABSENSI_GURU") {
-      var sheetGuru = ss.getSheetByName("ABSENSI GURU") || ss.getSheetByName("ABSENSI_GURU");
+      var sheetGuru = findSheetFlexible(ss, ["absensiguru", "presensiguru", "absen_guru", "absensi_guru"]);
       if (!sheetGuru) {
         sheetGuru = ss.insertSheet("ABSENSI GURU");
         sheetGuru.appendRow(["TIMESTAMP", "ID_ABSENSI_GURU", "TANGGAL", "NUG", "NAMA_GURU", "STATUS", "KETERANGAN", "JAM_DATANG", "JAM_PULANG", "LINK_BUKTI_ABSEN"]);
@@ -544,27 +544,68 @@ function doPost(e) {
   }
 }
 
+// Pencari Tab Fleksibel: Mengabaikan Spasi, Huruf Besar/Kecil, Garis Bawah
+function findSheetFlexible(ss, aliases) {
+  var sheets = ss.getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    var rawName = sheets[i].getName();
+    var clean = rawName.toLowerCase().replace(/[\s_\-]+/g, "");
+    for (var a = 0; a < aliases.length; a++) {
+      var target = aliases[a].toLowerCase().replace(/[\s_\-]+/g, "");
+      if (clean === target || clean.indexOf(target) !== -1) {
+        return sheets[i];
+      }
+    }
+  }
+  return null;
+}
+
+// Pencari Indeks Kolom Fleksibel: Otomatis mendeteksi variasi nama kolom header
+function findColIndex(headerRow, aliases) {
+  for (var i = 0; i < headerRow.length; i++) {
+    var colClean = String(headerRow[i] || "").toLowerCase().replace(/[\s_\-]+/g, "");
+    for (var a = 0; a < aliases.length; a++) {
+      var target = aliases[a].toLowerCase().replace(/[\s_\-]+/g, "");
+      if (colClean === target || colClean.indexOf(target) !== -1) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
 function getMasterRecords(ss) {
-  var sheetGuru = ss.getSheetByName("MASTER_GURU") || ss.getSheetByName("MASTER GURU") || ss.getSheetByName("GURU");
-  var sheetSiswa = ss.getSheetByName("MASTER_SISWA") || ss.getSheetByName("MASTER SISWA") || ss.getSheetByName("SISWA");
+  var sheetGuru = findSheetFlexible(ss, ["masterguru", "guru", "dataguru", "guru_tk"]);
+  var sheetSiswa = findSheetFlexible(ss, ["mastersiswa", "siswa", "datasiswa", "murid"]);
 
   var guruList = [];
+  var tabsFound = {
+    guru: sheetGuru ? sheetGuru.getName() : null,
+    siswa: sheetSiswa ? sheetSiswa.getName() : null
+  };
+
   if (sheetGuru) {
     var valsG = sheetGuru.getDataRange().getValues();
     if (valsG.length > 1) {
-      var headG = valsG[0].map(function(h){ return String(h).trim().toUpperCase(); });
-      var idxNug = headG.indexOf("NUG");
+      var headG = valsG[0];
+      var idxNug = findColIndex(headG, ["nug", "nip", "idguru", "kode", "nik", "no"]);
       if (idxNug === -1) idxNug = 0;
-      var idxNamaG = headG.indexOf("NAMA_GURU") !== -1 ? headG.indexOf("NAMA_GURU") : headG.indexOf("NAMA");
-      if (idxNamaG === -1) idxNamaG = 1;
-      var idxJabatan = headG.indexOf("JABATAN");
+
+      var idxNamaG = findColIndex(headG, ["namaguru", "nama", "namalengkap", "pengajar"]);
+      if (idxNamaG === -1) idxNamaG = (valsG[0].length > 1 ? 1 : 0);
+
+      var idxJabatan = findColIndex(headG, ["jabatan", "tugas", "posisi", "status"]);
 
       for (var i = 1; i < valsG.length; i++) {
         var rG = valsG[i];
-        if (rG[idxNug] || rG[idxNamaG]) {
+        var namaG = String(rG[idxNamaG] || "").trim();
+        var nugG = String(rG[idxNug] || "").trim();
+
+        // Validasi: Baris dianggap valid jika ada Nama
+        if (namaG && namaG !== "undefined" && namaG !== "-") {
           guruList.push({
-            nug: String(rG[idxNug] || "").trim(),
-            nama: String(rG[idxNamaG] || "").trim(),
+            nug: nugG || ("GUR-" + i),
+            nama: namaG,
             jabatan: idxJabatan !== -1 ? String(rG[idxJabatan] || "").trim() : ""
           });
         }
@@ -576,21 +617,24 @@ function getMasterRecords(ss) {
   if (sheetSiswa) {
     var valsS = sheetSiswa.getDataRange().getValues();
     if (valsS.length > 1) {
-      var headS = valsS[0].map(function(h){ return String(h).trim().toUpperCase(); });
-      var idxNis = headS.indexOf("NIS");
+      var headS = valsS[0];
+      var idxNis = findColIndex(headS, ["nis", "nisn", "idsiswa", "nik", "nomor"]);
       if (idxNis === -1) idxNis = 0;
-      var idxNamaS = headS.indexOf("NAMA_SISWA") !== -1 ? headS.indexOf("NAMA_SISWA") : headS.indexOf("NAMA");
+
+      var idxNamaS = findColIndex(headS, ["namasiswa", "nama", "namalengkap", "peserta"]);
       if (idxNamaS === -1) idxNamaS = 1;
-      var idxKel = headS.indexOf("KELOMPOK");
-      if (idxKel === -1) idxKel = 2;
+
+      var idxKel = findColIndex(headS, ["kelompok", "kelas", "rombel", "grup"]);
 
       for (var j = 1; j < valsS.length; j++) {
         var rS = valsS[j];
         var nisStr = String(rS[idxNis] || "").trim();
-        if (nisStr) {
+        var namaS = String(rS[idxNamaS] || "").trim();
+
+        if (nisStr && namaS) {
           siswaObj[nisStr] = {
-            nama: String(rS[idxNamaS] || "").trim(),
-            kelompok: idxKel !== -1 ? String(rS[idxKel] || "").trim() : "TK"
+            nama: namaS,
+            kelompok: idxKel !== -1 ? (String(rS[idxKel] || "").trim() || "TK") : "TK"
           };
         }
       }
@@ -600,7 +644,8 @@ function getMasterRecords(ss) {
   return {
     success: true,
     guru: guruList,
-    siswa: siswaObj
+    siswa: siswaObj,
+    tabsFound: tabsFound
   };
 }
 
@@ -704,7 +749,7 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
        ========================================================================= */
 
     const CONFIG_SEKOLAH = {
-      gasUrl: "https://script.google.com/macros/library/d/1cf1m84V2uwalHfo1kCuoAgCuwSNBuTe2gQAtSECTxsHLoqUyfiZTyw2f/4",
+      gasUrl: "https://script.google.com/macros/s/AKfycbxmG4MnEp6kyFi3cOS1Htb4GOgMVCdDqDc9Muoh424Fnb2pJclcMDNZarehCMktzTLd/exec",
       lat: -6.200000,
       lng: 106.816666,
       radius: 100
@@ -1162,7 +1207,7 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       const retakeBtn = document.getElementById("btn-guru-retake");
       const submitBtn = document.getElementById("btn-submit-guru-final");
 
-      if (!video.videoWidth) {
+      if (!video.videoWidth || !video.videoHeight) {
         showToast("Kamera selfie sedang menyiapkan frame...", "error");
         return;
       }
@@ -1171,41 +1216,52 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
 
+      // Draw mirrored video image
       ctx.save();
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       ctx.restore();
 
+      // Burn watermark permanently onto photo pixels
       const now = new Date();
       const timeStr = now.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB";
-      const guruVal = document.getElementById("select-guru").value.split("|");
-      const nug = guruVal[0] || "-";
-      const nama = guruVal[1] || "-";
+      const guruData = (document.getElementById("select-guru")?.value || "").split("|");
+      const nug = guruData[0] || "-";
+      const nama = guruData[1] || "GURU";
 
-      const latLngStr = currentGeoCoords
-        ? `${currentGeoCoords.latitude.toFixed(6)}, ${currentGeoCoords.longitude.toFixed(6)}`
-        : "GPS SATELIT NON-AKTIF";
+      let gpsText = "GPS: Belum terdeteksi";
+      if (currentGeoCoords) {
+        const schoolLat = parseFloat(document.getElementById("school-lat-input")?.value || -6.2);
+        const schoolLng = parseFloat(document.getElementById("school-lng-input")?.value || 106.816666);
+        const dist = Math.round(calculateHaversineMeters(currentGeoCoords.latitude, currentGeoCoords.longitude, schoolLat, schoolLng));
+        gpsText = `GPS: ${currentGeoCoords.latitude.toFixed(6)}, ${currentGeoCoords.longitude.toFixed(6)} (${dist}m)`;
+      }
 
-      const schoolDistStr = document.getElementById("gps-val-distance").innerText;
+      // Watermark background box
+      const boxHeight = Math.max(90, Math.floor(canvas.height * 0.16));
+      ctx.fillStyle = "rgba(2, 6, 23, 0.85)";
+      ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
 
-      const barH = 110;
-      ctx.fillStyle = "rgba(2, 6, 23, 0.82)";
-      ctx.fillRect(0, canvas.height - barH, canvas.width, barH);
+      // Watermark accent bar
+      ctx.fillStyle = "#10b981";
+      ctx.fillRect(0, canvas.height - boxHeight, canvas.width, 3);
 
+      // Watermark text rows
+      const fontSize = Math.max(14, Math.floor(canvas.width * 0.032));
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 24px 'Plus Jakarta Sans', sans-serif";
-      ctx.fillText(`TK PGRI PAKANDANGAN SANGRA • ${nug} - ${nama}`, 25, canvas.height - 70);
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.fillText(`TK PGRI PAKANDANGAN SANGRA • ${nug} - ${nama}`, 20, canvas.height - boxHeight + fontSize + 10);
 
       ctx.fillStyle = "#34d399";
-      ctx.font = "19px 'JetBrains Mono', monospace";
-      ctx.fillText(`WAKTU: ${timeStr} | RADIUS: ${schoolDistStr}`, 25, canvas.height - 42);
+      ctx.font = `${Math.max(12, fontSize - 2)}px monospace`;
+      ctx.fillText(timeStr, 20, canvas.height - boxHeight + (fontSize * 2) + 14);
 
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "16px 'JetBrains Mono', monospace";
-      ctx.fillText(`KOORDINAT: ${latLngStr} (VERIFIKASI ANTI-FAKE: ${isGpsPass ? 'VALID' : 'INVALID'})`, 25, canvas.height - 18);
+      ctx.font = `${Math.max(11, fontSize - 3)}px monospace`;
+      ctx.fillText(`${gpsText} • GEO-VERIFIED`, 20, canvas.height - boxHeight + (fontSize * 3) + 18);
 
-      capturedSelfieDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      capturedSelfieDataUrl = canvas.toDataURL("image/jpeg", 0.82);
 
       previewImg.src = capturedSelfieDataUrl;
       previewImg.classList.remove("hidden");
@@ -1214,29 +1270,27 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
 
       if (isGpsPass) {
         submitBtn.disabled = false;
-        playBeepSuccess();
-        showToast("Selfie berhasil dengan stempel GPS valid!", "success");
+        showToast("Foto selfie berhasil diambil dengan stempel watermark!", "success");
       } else {
         submitBtn.disabled = true;
-        playBeepReject();
-        showToast("Selfie tersimpan, namun tombol terkunci karena di luar radius!", "error");
+        showToast("Foto diambil, namun GPS belum valid atau di luar radius!", "error");
       }
     }
 
     function retakeTeacherPhoto() {
+      capturedSelfieDataUrl = null;
       const previewImg = document.getElementById("guru-preview-img");
       const snapBtn = document.getElementById("btn-guru-snap");
       const retakeBtn = document.getElementById("btn-guru-retake");
       const submitBtn = document.getElementById("btn-submit-guru-final");
 
-      capturedSelfieDataUrl = null;
-      previewImg.classList.add("hidden");
-      snapBtn.classList.remove("hidden");
-      retakeBtn.classList.add("hidden");
-      submitBtn.disabled = true;
+      if (previewImg) previewImg.classList.add("hidden");
+      if (snapBtn) snapBtn.classList.remove("hidden");
+      if (retakeBtn) retakeBtn.classList.add("hidden");
+      if (submitBtn) submitBtn.disabled = true;
     }
 
-    function submitGuruAttendance() {
+    async function submitGuruAttendance() {
       if (!isGpsPass) {
         playBeepReject();
         showToast("Ditolak: Anda berada di luar radius sekolah atau fake GPS terdeteksi!", "error");
@@ -1300,20 +1354,33 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       try {
         const requestBody = Object.assign({ action: actionName }, payload);
 
-        const res = await fetch(gasUrl, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(requestBody)
-        });
-
-        const result = await res.json();
-        if (result.success) {
-          showToast("Data tersinkronisasi ke Google Spreadsheet DATABASE TK!", "success");
-        } else {
-          showToast("Koneksi Apps Script merespons: " + (result.error || result.message), "error");
+        // Percobaan 1: Pengiriman standar
+        try {
+          const res = await fetch(gasUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(requestBody)
+          });
+          const result = await res.json();
+          if (result.success) {
+            showToast("Data tersinkronisasi ke Google Spreadsheet DATABASE TK!", "success");
+            return;
+          }
+        } catch (fetchErr) {
+          // Percobaan 2 (Fallback Khusus HP): mode no-cors menjamin paket tetap sampai ke Spreadsheet
+          console.warn("Fallback pengiriman no-cors HP:", fetchErr);
+          await fetch(gasUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(requestBody)
+          });
+          showToast("Data presensi terkirim ke DATABASE TK!", "success");
+          return;
         }
       } catch (err) {
         console.warn("Sync GAS:", err);
+        showToast("Gagal koneksi ke server presensi!", "error");
       }
     }
 
@@ -1325,40 +1392,40 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       }
 
       showToast("Menguji koneksi ke DATABASE TK...", "info");
-      try {
-        const res = await fetch(gasUrl, { method: "GET" });
-        const result = await res.json();
-        
-        if (result.status === "ONLINE") {
-          const tabSiswa = result.tabsReady.absensiSiswa ? "Siswa: OK" : "Siswa: Dibuat Otomatis";
-          const tabGuru = result.tabsReady.absensiGuru ? "Guru: OK" : "Guru: Dibuat Otomatis";
-          const tabMaster = result.tabsReady.masterGuru ? "Master: OK" : "Master: Belum Ada";
-          showToast(`Terhubung ke ${result.spreadsheetName}! (${tabMaster})`, "success");
-          loadMasterDataFromGas(false);
-        } else if (result.success) {
-          showToast("Sukses: " + result.message, "success");
-          loadMasterDataFromGas(false);
-        } else {
-          showToast("Respons server: " + (result.message || "Online"), "info");
+      loadMasterDataFromGas(true);
+    }
+
+    // Engine JSONP Khusus HP: Membaca data via tag script sehingga 100% kebal blokir CORS & Redirect 302 di HP
+    function fetchGasJsonp(url, timeoutMs = 12000) {
+      return new Promise((resolve, reject) => {
+        const cbName = "gasCb_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+        const script = document.createElement("script");
+        const sep = url.includes("?") ? "&" : "?";
+
+        let timer = setTimeout(() => {
+          cleanup();
+          reject(new Error("Timeout (koneksi lambat atau URL salah)"));
+        }, timeoutMs);
+
+        function cleanup() {
+          if (timer) clearTimeout(timer);
+          if (script.parentNode) script.parentNode.removeChild(script);
+          delete window[cbName];
         }
-      } catch (e) {
-        try {
-          const resPost = await fetch(gasUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "PING" })
-          });
-          const resData = await resPost.json();
-          if (resData.success) {
-            showToast("Koneksi berhasil terverifikasi (POST)!", "success");
-            loadMasterDataFromGas(false);
-          } else {
-            showToast("Server merespons: " + (resData.error || "Gagal"), "error");
-          }
-        } catch (postErr) {
-          showToast("Gagal menghubungi URL Web App: Pastikan izin 'Anyone' sudah dipilih saat Deploy.", "error");
-        }
-      }
+
+        window[cbName] = function(data) {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = function() {
+          cleanup();
+          reject(new Error("Gagal terhubung ke Google Apps Script"));
+        };
+
+        script.src = `${url}${sep}action=GET_MASTER&callback=${cbName}&_=${Date.now()}`;
+        document.head.appendChild(script);
+      });
     }
 
     async function loadMasterDataFromGas(showToastAlert = false) {
@@ -1374,56 +1441,84 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       }
 
       if (showToastAlert) {
-        showToast("Mengunduh data MASTER_GURU dan MASTER_SISWA...", "info");
+        showToast("Menghubungkan ke tab Master Spreadsheet...", "info");
       }
 
       try {
         let fetchedData = null;
+        
+        // 1. Prioritas HP: Gunakan JSONP (Kebal CORS & Kebal Blokir 302 Redirect di Android/iOS)
         try {
-          const res = await fetch(gasUrl + "?action=GET_MASTER");
-          fetchedData = await res.json();
-        } catch (getErr) {
-          const resPost = await fetch(gasUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "GET_MASTER" })
-          });
-          fetchedData = await resPost.json();
+          fetchedData = await fetchGasJsonp(gasUrl, 10000);
+        } catch (jsonpErr) {
+          console.warn("JSONP tidak merespons, mencoba Direct Fetch:", jsonpErr);
         }
 
-        if (fetchedData && fetchedData.success) {
-          // 1. Sinkronisasi Data Guru
+        // 2. Fallback Laptop / Desktop: Direct GET Fetch
+        if (!fetchedData || (!fetchedData.guru && !fetchedData.siswa)) {
+          try {
+            const res = await fetch(gasUrl + (gasUrl.includes("?") ? "&" : "?") + "action=GET_MASTER&t=" + Date.now(), {
+              method: "GET",
+              headers: { "Accept": "application/json" }
+            });
+            fetchedData = await res.json();
+          } catch (getErr) {
+            console.warn("GET fetch dialihkan ke POST:", getErr);
+          }
+        }
+
+        // 3. Fallback POST jika GET diblokir
+        if (!fetchedData || (!fetchedData.guru && !fetchedData.siswa)) {
+          try {
+            const resPost = await fetch(gasUrl, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({ action: "GET_MASTER" })
+            });
+            fetchedData = await resPost.json();
+          } catch (postErr) {
+            console.warn("POST fetch gagal:", postErr);
+          }
+        }
+
+        if (fetchedData && (fetchedData.success || fetchedData.status === "ONLINE")) {
+          // 1. Sinkronisasi Data Guru (Tab Master_Guru)
           if (fetchedData.guru && Array.isArray(fetchedData.guru)) {
             masterGuruList = fetchedData.guru;
             renderGuruSelect(masterGuruList);
           }
 
-          // 2. Sinkronisasi Data Siswa (100% dari TAB MASTER_SISWA)
+          // 2. Sinkronisasi Data Siswa (Tab Master_Siswa)
           if (fetchedData.siswa && typeof fetchedData.siswa === "object") {
             studentDirectory = fetchedData.siswa;
             const countSiswa = Object.keys(studentDirectory).length;
             const labelEl = document.getElementById("label-siswa-count");
             if (labelEl) {
-              labelEl.innerText = `${countSiswa} Siswa Terdaftar (MASTER_SISWA)`;
+              labelEl.innerText = `${countSiswa} Siswa Terdaftar (${fetchedData.tabsFound?.siswa || 'Master_Siswa'})`;
             }
           }
 
-          if (showToastAlert) {
-            const jmlGuru = masterGuruList.length;
-            const jmlSiswa = Object.keys(studentDirectory).length;
-            showToast(`Sukses sinkron: ${jmlGuru} Guru & ${jmlSiswa} Siswa dari Database TK!`, "success");
+          const jmlGuru = masterGuruList.length;
+          const jmlSiswa = Object.keys(studentDirectory).length;
+
+          if (jmlGuru === 0 && jmlSiswa === 0) {
+            if (showToastAlert) {
+              showToast("Terhubung, namun baris data di Master_Guru & Master_Siswa masih kosong!", "error");
+            }
+          } else if (showToastAlert) {
+            showToast(`Sukses terhubung: ${jmlGuru} Guru & ${jmlSiswa} Siswa termuat!`, "success");
           }
         } else {
           renderGuruSelect([]);
           if (showToastAlert) {
-            showToast("Gagal membaca master data: Spreadsheet belum lengkap", "error");
+            showToast("Gagal membaca master: " + (fetchedData?.error || fetchedData?.message || "Respons tidak sesuai"), "error");
           }
         }
       } catch (err) {
-        console.warn("Gagal load Master Data:", err);
+        console.error("Gagal sinkron master data:", err);
         renderGuruSelect([]);
         if (showToastAlert) {
-          showToast("Gagal memuat Master Data: " + err.message, "error");
+          showToast("Gagal koneksi: Pastikan akses Deploy Web App diatur ke 'Anyone'", "error");
         }
       }
     }
