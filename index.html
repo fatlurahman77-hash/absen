@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#020617">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Presensi TK Terpadu - Mobile Edition</title>
+  <title>Presensi Digital TK - TK PGRI Pakandangan Sangra</title>
   
   <!-- Tailwind CSS Framework -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -104,15 +104,17 @@
   <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-lg border-b border-slate-800/80 px-4 py-3 shrink-0">
     <div class="max-w-md mx-auto flex items-center justify-between">
       <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center font-extrabold text-slate-950 text-base shadow-md shadow-brand-500/20">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center font-extrabold text-slate-950 text-base shadow-md shadow-brand-500/20 shrink-0">
           TK
         </div>
         <div>
+          <!-- Judul 2 Susun: Baris 1 Nama Sistem & Indikator, Baris 2 Nama Lembaga -->
           <div class="flex items-center gap-1.5">
-            <h1 class="text-sm font-extrabold tracking-tight text-white uppercase">Presensi Digital TK</h1>
-            <span id="conn-pill" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-400 border border-brand-500/30">ONLINE</span>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Presensi Digital TK</span>
+            <span id="conn-pill" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-brand-500/20 text-brand-400 border border-brand-500/30">ONLINE</span>
           </div>
-          <p id="live-clock" class="text-[11px] font-mono text-slate-400">Memuat waktu...</p>
+          <h1 class="text-xs sm:text-sm font-extrabold tracking-tight text-white uppercase leading-tight">TK PGRI Pakandangan Sangra</h1>
+          <p id="live-clock" class="text-[10px] font-mono text-slate-400 mt-0.5">Memuat waktu...</p>
         </div>
       </div>
 
@@ -201,14 +203,20 @@
         </div>
       </div>
 
-      <!-- Quick Registry Assistant for New Student -->
-      <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between text-xs">
-        <div>
-          <span class="font-bold text-white block">Tambah Siswa Cepat</span>
-          <span class="text-slate-400 text-[11px]">Daftarkan nama & kelompok baru</span>
+      <!-- Status Sinkronisasi MASTER_SISWA (100% dari Database Spreadsheet) -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400 shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          </div>
+          <div>
+            <span class="font-bold text-white block">Tabel MASTER_SISWA</span>
+            <span id="label-siswa-count" class="text-slate-400 text-[11px]">Memuat data siswa dari Google Sheets...</span>
+          </div>
         </div>
-        <button onclick="openQuickAddStudentModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-brand-400 rounded-lg font-bold border border-slate-700 transition">
-          + Siswa Baru
+        <button type="button" onclick="loadMasterDataFromGas(true)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-brand-400 rounded-lg font-bold border border-slate-700 transition flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Sinkron
         </button>
       </div>
     </section>
@@ -279,7 +287,7 @@
             <div id="wm-time-line" class="font-bold text-white">2026-09-12 00:00:00 WIB</div>
             <div id="wm-gps-line" class="text-slate-300">GPS: Membaca koordinat...</div>
             <div class="flex items-center justify-between text-emerald-400 text-[9px] pt-0.5 font-sans font-bold">
-              <span>DATABASE TK • PRESENSI GURU</span>
+              <span>TK PGRI PAKANDANGAN SANGRA • GURU</span>
               <span>GEO-VERIFIED</span>
             </div>
           </div>
@@ -312,12 +320,15 @@
         <!-- Teacher Form Inputs -->
         <div class="space-y-2.5 pt-1">
           <div>
-            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Nama Guru & NUG</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-[11px] font-semibold text-slate-400">Nama Guru & NUG (Tabel MASTER_GURU)</label>
+              <button type="button" onclick="loadMasterDataFromGas(true)" class="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 active:scale-95 transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Sinkron Data Guru
+              </button>
+            </div>
             <select id="select-guru" class="w-full bg-slate-950 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-indigo-500">
-              <option value="NUG-001|Ibu Sri Wahyuni, S.Pd">NUG-001 - Ibu Sri Wahyuni, S.Pd (Kepala Sekolah)</option>
-              <option value="NUG-002|Ibu Siti Rahmawati, S.Pd">NUG-002 - Ibu Siti Rahmawati, S.Pd (Guru TK A)</option>
-              <option value="NUG-003|Ibu Nurul Hidayah, S.Pd">NUG-003 - Ibu Nurul Hidayah, S.Pd (Guru TK B)</option>
-              <option value="NUG-004|Ibu Dewi Anggraini, S.Pd">NUG-004 - Ibu Dewi Anggraini, S.Pd (Guru Pendamping)</option>
+              <option value="">-- Menghubungkan ke tabel MASTER_GURU... --</option>
             </select>
           </div>
 
@@ -360,73 +371,27 @@
     <section id="view-log" class="hidden flex flex-col gap-4">
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-2xl flex flex-col gap-3">
         <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">Riwayat Presensi Hari Ini</h3>
-            <p class="text-[11px] text-slate-400">Tersinkronisasi lokal & Google Apps Script</p>
-          </div>
-          <button onclick="exportCsvDirect()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            CSV
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Riwayat Presensi Hari Ini</h3>
+          <button onclick="exportCsvDirect()" class="text-xs font-bold text-brand-400 bg-brand-500/10 px-3 py-1.5 rounded-lg border border-brand-500/20 active:scale-95 transition flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Ekspor CSV
           </button>
         </div>
 
-        <!-- Filter Sub-Tabs -->
-        <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs">
-          <button id="btn-tab-log-siswa" onclick="setLogTab('siswa')" class="py-2 rounded-xl font-bold bg-brand-500 text-slate-950 transition">
-            Siswa (<span id="count-siswa-badge">0</span>)
+        <!-- Filter Tabs -->
+        <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs">
+          <button id="btn-tab-log-siswa" onclick="setLogTab('siswa')" class="py-2 rounded-xl font-bold bg-brand-500 text-slate-950 transition flex items-center justify-center gap-1.5">
+            <span>Siswa</span>
+            <span id="count-siswa-badge" class="px-1.5 py-0.2 bg-slate-950/30 rounded-full text-[10px]">0</span>
           </button>
-          <button id="btn-tab-log-guru" onclick="setLogTab('guru')" class="py-2 rounded-xl font-bold text-slate-400 hover:text-white transition">
-            Guru (<span id="count-guru-badge">0</span>)
+          <button id="btn-tab-log-guru" onclick="setLogTab('guru')" class="py-2 rounded-xl font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5">
+            <span>Guru</span>
+            <span id="count-guru-badge" class="px-1.5 py-0.2 bg-slate-800 rounded-full text-[10px]">0</span>
           </button>
         </div>
 
-        <!-- Mobile List View -->
-        <div id="log-list-container" class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================================== -->
-    <!-- TAB 4: PENGATURAN RADIUS, BACKEND APPS SCRIPT & APPSHEET       -->
-    <!-- ============================================================== -->
-    <section id="view-config" class="hidden flex flex-col gap-4">
-      
-      <!-- Calibration Box -->
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-2xl space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Kalibrasi Radius Sekolah</h3>
-          <button onclick="calibrateCurrentGps()" class="text-[11px] font-bold text-brand-400 hover:underline">
-            Gunakan Titik Saat Ini
-          </button>
-        </div>
-        <p class="text-[11px] text-slate-400">Tentukan koordinat pusat sekolah TK Anda. Absensi guru otomatis menolak fake GPS di luar radius ini.</p>
-        <div class="grid grid-cols-3 gap-2 text-xs">
-          <div>
-            <span class="text-[10px] text-slate-500 block mb-0.5">Latitude</span>
-            <input type="number" step="0.000001" id="school-lat-input" value="-6.200000" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 font-mono text-white text-xs">
-          </div>
-          <div>
-            <span class="text-[10px] text-slate-500 block mb-0.5">Longitude</span>
-            <input type="number" step="0.000001" id="school-lng-input" value="106.816666" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 font-mono text-white text-xs">
-          </div>
-          <div>
-            <span class="text-[10px] text-slate-500 block mb-0.5">Radius (m)</span>
-            <input type="number" id="school-rad-input" value="100" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 font-mono text-white text-xs">
-          </div>
-        </div>
-      </div>
-
-      <!-- GAS Endpoint Connection -->
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-2xl space-y-3">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Koneksi Google Apps Script (Web App)</h3>
-        <p class="text-[11px] text-slate-400">Tempel URL Web App dari Apps Script Google Spreadsheet <b>"DATABASE TK"</b>:</p>
-        <div class="flex items-center gap-2">
-          <input type="url" id="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono placeholder-slate-600 focus:outline-none focus:border-brand-500">
-          <button onclick="pingGasEndpoint()" class="px-3.5 py-2.5 bg-brand-500 hover:bg-brand-400 active:scale-95 text-slate-950 font-extrabold text-xs rounded-xl transition shrink-0">
-            Tes Sync
-          </button>
-        </div>
+        <!-- Log List Container -->
+        <div id="log-list-container" class="flex flex-col gap-2 max-h-96 overflow-y-auto pr-1"></div>
       </div>
 
       <!-- Apps Script Code Viewer -->
@@ -437,26 +402,71 @@
             Salin Kode
           </button>
         </div>
-        <p class="text-[11px] text-slate-400">Salin kode ini ke Google Apps Script di dalam Spreadsheet <b>DATABASE TK</b> untuk menerima data siswa dan guru beserta penyimpanan foto selfie di Google Drive.</p>
+        <p class="text-[11px] text-slate-400">Salin kode ini ke Google Apps Script di dalam Spreadsheet <b>DATABASE TK</b> untuk menerima data presensi dan membaca otomatis tab <b>MASTER_GURU</b> dan <b>MASTER_SISWA</b>.</p>
         <pre id="raw-gas-code" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[10px] font-mono text-emerald-400 overflow-x-auto max-h-56 leading-relaxed">
 /* =========================================================================
-   BACKEND PRODUCTION: DATABASE TK (APPSHEET & WEB)
-   Sheet File: DATABASE TK
-   Tabs: "ABSENSI SISWA" & "ABSENSI GURU"
+   BACKEND PRODUCTION: DATABASE TK (TK PGRI PAKANDANGAN SANGRA)
+   Sheet File : DATABASE TK
+   Tabs       : "ABSENSI SISWA", "ABSENSI GURU", "MASTER_GURU", "MASTER_SISWA"
    ========================================================================= */
+
+function doGet(e) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var action = e && e.parameter ? e.parameter.action : "";
+
+    if (action === "GET_MASTER" || action === "GET_GURU") {
+      return ContentService.createTextOutput(JSON.stringify(getMasterRecords(ss)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var sheetSiswa = ss.getSheetByName("ABSENSI SISWA") || ss.getSheetByName("ABSENSI_SISWA");
+    var sheetGuru = ss.getSheetByName("ABSENSI GURU") || ss.getSheetByName("ABSENSI_GURU");
+    var sheetMasterGuru = ss.getSheetByName("MASTER_GURU") || ss.getSheetByName("MASTER GURU");
+    var sheetMasterSiswa = ss.getSheetByName("MASTER_SISWA") || ss.getSheetByName("MASTER SISWA");
+
+    var response = {
+      status: "ONLINE",
+      service: "Backend Presensi DATABASE TK",
+      sekolah: "TK PGRI Pakandangan Sangra",
+      spreadsheetName: ss.getName(),
+      tabsReady: {
+        absensiSiswa: sheetSiswa !== null,
+        absensiGuru: sheetGuru !== null,
+        masterGuru: sheetMasterGuru !== null,
+        masterSiswa: sheetMasterSiswa !== null
+      },
+      serverTime: Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss") + " WIB"
+    };
+
+    return ContentService.createTextOutput(JSON.stringify(response))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "ERROR",
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.tryLock(15000);
   
   try {
+    if (!e || !e.postData || !e.postData.contents) {
+      throw new Error("Payload kosong atau format salah");
+    }
+
     var rawText = e.postData.contents;
     var data = JSON.parse(rawText);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // -------------------------------------------------------------
-    // PING TEST KONEKSI
-    // -------------------------------------------------------------
+    if (data.action === "GET_MASTER") {
+      return ContentService.createTextOutput(JSON.stringify(getMasterRecords(ss)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     if (data.action === "PING") {
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -464,13 +474,12 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // -------------------------------------------------------------
-    // TAB: ABSENSI SISWA
-    // Kolom: TIMESTAMP, ID_ABSENSI_SISWA, TANGGAL, NIS, NAMA_SISWA, KELOMPOK, STATUS, KETERANGAN
-    // -------------------------------------------------------------
     if (data.action === "ABSENSI_SISWA") {
       var sheetSiswa = ss.getSheetByName("ABSENSI SISWA") || ss.getSheetByName("ABSENSI_SISWA");
-      if (!sheetSiswa) throw new Error("Tab 'ABSENSI SISWA' tidak ditemukan di Spreadsheet DATABASE TK!");
+      if (!sheetSiswa) {
+        sheetSiswa = ss.insertSheet("ABSENSI SISWA");
+        sheetSiswa.appendRow(["TIMESTAMP", "ID_ABSENSI_SISWA", "TANGGAL", "NIS", "NAMA_SISWA", "KELOMPOK", "STATUS", "KETERANGAN"]);
+      }
 
       var rowSiswa = [
         data.TIMESTAMP || new Date(),
@@ -491,13 +500,12 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // -------------------------------------------------------------
-    // TAB: ABSENSI GURU
-    // Kolom: TIMESTAMP, ID_ABSENSI_GURU, TANGGAL, NUG, NAMA_GURU, STATUS, KETERANGAN, JAM_DATANG, JAM_PULANG, LINK_BUKTI_ABSEN
-    // -------------------------------------------------------------
     if (data.action === "ABSENSI_GURU") {
       var sheetGuru = ss.getSheetByName("ABSENSI GURU") || ss.getSheetByName("ABSENSI_GURU");
-      if (!sheetGuru) throw new Error("Tab 'ABSENSI GURU' tidak ditemukan di Spreadsheet DATABASE TK!");
+      if (!sheetGuru) {
+        sheetGuru = ss.insertSheet("ABSENSI GURU");
+        sheetGuru.appendRow(["TIMESTAMP", "ID_ABSENSI_GURU", "TANGGAL", "NUG", "NAMA_GURU", "STATUS", "KETERANGAN", "JAM_DATANG", "JAM_PULANG", "LINK_BUKTI_ABSEN"]);
+      }
 
       var driveUrl = "-";
       if (data.BASE64_IMAGE) {
@@ -536,6 +544,66 @@ function doPost(e) {
   }
 }
 
+function getMasterRecords(ss) {
+  var sheetGuru = ss.getSheetByName("MASTER_GURU") || ss.getSheetByName("MASTER GURU") || ss.getSheetByName("GURU");
+  var sheetSiswa = ss.getSheetByName("MASTER_SISWA") || ss.getSheetByName("MASTER SISWA") || ss.getSheetByName("SISWA");
+
+  var guruList = [];
+  if (sheetGuru) {
+    var valsG = sheetGuru.getDataRange().getValues();
+    if (valsG.length > 1) {
+      var headG = valsG[0].map(function(h){ return String(h).trim().toUpperCase(); });
+      var idxNug = headG.indexOf("NUG");
+      if (idxNug === -1) idxNug = 0;
+      var idxNamaG = headG.indexOf("NAMA_GURU") !== -1 ? headG.indexOf("NAMA_GURU") : headG.indexOf("NAMA");
+      if (idxNamaG === -1) idxNamaG = 1;
+      var idxJabatan = headG.indexOf("JABATAN");
+
+      for (var i = 1; i < valsG.length; i++) {
+        var rG = valsG[i];
+        if (rG[idxNug] || rG[idxNamaG]) {
+          guruList.push({
+            nug: String(rG[idxNug] || "").trim(),
+            nama: String(rG[idxNamaG] || "").trim(),
+            jabatan: idxJabatan !== -1 ? String(rG[idxJabatan] || "").trim() : ""
+          });
+        }
+      }
+    }
+  }
+
+  var siswaObj = {};
+  if (sheetSiswa) {
+    var valsS = sheetSiswa.getDataRange().getValues();
+    if (valsS.length > 1) {
+      var headS = valsS[0].map(function(h){ return String(h).trim().toUpperCase(); });
+      var idxNis = headS.indexOf("NIS");
+      if (idxNis === -1) idxNis = 0;
+      var idxNamaS = headS.indexOf("NAMA_SISWA") !== -1 ? headS.indexOf("NAMA_SISWA") : headS.indexOf("NAMA");
+      if (idxNamaS === -1) idxNamaS = 1;
+      var idxKel = headS.indexOf("KELOMPOK");
+      if (idxKel === -1) idxKel = 2;
+
+      for (var j = 1; j < valsS.length; j++) {
+        var rS = valsS[j];
+        var nisStr = String(rS[idxNis] || "").trim();
+        if (nisStr) {
+          siswaObj[nisStr] = {
+            nama: String(rS[idxNamaS] || "").trim(),
+            kelompok: idxKel !== -1 ? String(rS[idxKel] || "").trim() : "TK"
+          };
+        }
+      }
+    }
+  }
+
+  return {
+    success: true,
+    guru: guruList,
+    siswa: siswaObj
+  };
+}
+
 function uploadSelfieToDrive(base64Data, nug, nama) {
   try {
     var folderName = "BUKTI_ABSENSI_GURU_TK";
@@ -546,7 +614,7 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
     var mime = parts[0].match(/:(.*?);/)[1];
     var bytes = Utilities.base64Decode(parts[1]);
     var timeStamp = Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd_HHmmss");
-    var fileName = "SELFIE_" + nug + "_" + timeStamp + ".jpg";
+    var fileName = "SELFIE_" + (nug || "GURU") + "_" + timeStamp + ".jpg";
 
     var blob = Utilities.newBlob(bytes, mime, fileName);
     var file = targetFolder.createFile(blob);
@@ -557,6 +625,54 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
   }
 }
         </pre>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- TAB 4: SETELAN & INTEGRASI SISTEM                              -->
+    <!-- ============================================================== -->
+    <section id="view-config" class="hidden flex flex-col gap-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-2xl space-y-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Integrasi Web App Apps Script</h3>
+        <p class="text-xs text-slate-400">Masukkan URL Web App hasil Deploy dari Spreadsheet <b>DATABASE TK</b> untuk menghubungkan data langsung.</p>
+        
+        <div class="space-y-2">
+          <label class="block text-[11px] font-semibold text-slate-400">URL Web App Google Apps Script</label>
+          <input type="url" id="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-brand-500">
+          <div class="flex items-center gap-2 pt-1">
+            <button onclick="pingGasEndpoint()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-brand-400 border border-slate-700 rounded-xl font-bold text-xs transition">
+              Tes Sync (Ping)
+            </button>
+            <button onclick="loadMasterDataFromGas(true)" class="flex-1 py-2.5 bg-brand-500 hover:bg-brand-400 active:scale-95 text-slate-950 rounded-xl font-extrabold text-xs transition">
+              Sinkron Master
+            </button>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-800/80 pt-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-slate-300">Koordinat Titik Pusat Sekolah</h4>
+            <button onclick="calibrateCurrentGps()" class="text-[10px] text-brand-400 font-bold bg-brand-500/10 px-2.5 py-1 rounded-lg border border-brand-500/20 active:scale-95 transition">
+              Gunakan Titik Saat Ini
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Latitude</label>
+              <input type="text" id="school-lat-input" value="-6.200000" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Longitude</label>
+              <input type="text" id="school-lng-input" value="106.816666" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-slate-400 mb-1">Radius Toleransi Presensi (Meter)</label>
+            <input type="number" id="school-rad-input" value="100" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -582,50 +698,23 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
     </div>
   </nav>
 
-  <div id="modal-quick-student" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-4">
-    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4 transform transition-all">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-sm font-bold text-white">Tambah Siswa Cepat</h3>
-        <button onclick="closeQuickAddStudentModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block text-slate-400 mb-1">NIS (Nomor Induk Siswa)</label>
-          <input type="text" id="modal-new-nis" placeholder="Contoh: 1006" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono">
-        </div>
-        <div>
-          <label class="block text-slate-400 mb-1">Nama Lengkap Siswa</label>
-          <input type="text" id="modal-new-nama" placeholder="Nama murid..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white">
-        </div>
-        <div>
-          <label class="block text-slate-400 mb-1">Kelompok Belajar</label>
-          <select id="modal-new-kelompok" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white">
-            <option value="TK A">TK A</option>
-            <option value="TK B">TK B</option>
-            <option value="Playgroup">Playgroup</option>
-          </select>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 pt-2">
-        <button onclick="closeQuickAddStudentModal()" class="flex-1 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs">Batal</button>
-        <button onclick="saveQuickStudent()" class="flex-1 py-3 bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold rounded-xl text-xs">Simpan Siswa</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     /* =========================================================================
        GLOBAL APP ENGINE: DATABASE TK (MOBILE & PRODUCTION READY)
        ========================================================================= */
 
-    // In-memory student directory (expandable on mobile)
-    const STUDENT_DIRECTORY = {
-      "1001": { nama: "Ahmad Fauzi", kelompok: "TK A" },
-      "1002": { nama: "Siti Nurhaliza", kelompok: "TK A" },
-      "1003": { nama: "Muhammad Rizky", kelompok: "TK B" },
-      "1004": { nama: "Aisyah Putri", kelompok: "TK B" },
-      "1005": { nama: "Kenzo Danendra", kelompok: "Playgroup" }
+    const CONFIG_SEKOLAH = {
+      gasUrl: "",
+      lat: -6.200000,
+      lng: 106.816666,
+      radius: 100
     };
+
+    // Data Guru dimuat langsung dari tab MASTER_GURU di Google Spreadsheet
+    let masterGuruList = [];
+
+    // Direktori Siswa murni diambil dari tab MASTER_SISWA di Google Spreadsheet (DATABASE TK)
+    let studentDirectory = {};
 
     // State Variables
     let currentTab = "siswa";
@@ -669,7 +758,7 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "sine";
-        osc.frequency.setValueAtTime(1046.5, ctx.currentTime); // C6 Note
+        osc.frequency.setValueAtTime(1046.5, ctx.currentTime);
         gain.gain.setValueAtTime(0.2, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
         osc.connect(gain);
@@ -677,7 +766,6 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
         osc.start();
         osc.stop(ctx.currentTime + 0.12);
 
-        // Hardware Haptic Feedback on real mobile
         if ("vibrate" in navigator) {
           navigator.vibrate([60, 30, 80]);
         }
@@ -714,12 +802,14 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
         const viewEl = document.getElementById("view-" + t);
         const navBtn = document.getElementById("nav-btn-" + t);
 
-        if (t === tabKey) {
-          viewEl.classList.remove("hidden");
-          navBtn.className = "flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition bg-brand-500/10 text-brand-400 font-bold";
-        } else {
-          viewEl.classList.add("hidden");
-          navBtn.className = "flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition text-slate-400 hover:text-white font-semibold";
+        if (viewEl && navBtn) {
+          if (t === tabKey) {
+            viewEl.classList.remove("hidden");
+            navBtn.className = "flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition bg-brand-500/10 text-brand-400 font-bold";
+          } else {
+            viewEl.classList.add("hidden");
+            navBtn.className = "flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition text-slate-400 hover:text-white font-semibold";
+          }
         }
       });
 
@@ -761,7 +851,7 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
           { facingMode: cameraFacing },
           qrConfig,
           onBarcodeReadSuccess,
-          (msg) => {} // silent scan frame error
+          (msg) => {}
         );
 
         isScannerActive = true;
@@ -803,7 +893,6 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       if (scanCoolDown) return;
       scanCoolDown = true;
 
-      playBeepSuccess();
       processStudentAttendanceRecord(decodedCode);
 
       setTimeout(() => {
@@ -818,18 +907,36 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
         showToast("Ketikkan NIS siswa terlebih dahulu", "error");
         return;
       }
-      playBeepSuccess();
       processStudentAttendanceRecord(val);
       input.value = "";
     }
 
     function processStudentAttendanceRecord(nisCode) {
-      const now = new Date();
-      const student = STUDENT_DIRECTORY[nisCode] || {
-        nama: "Siswa TK (NIS " + nisCode + ")",
-        kelompok: "TK A"
-      };
+      const cleanNis = String(nisCode).trim();
+      const student = studentDirectory[cleanNis];
 
+      // Verifikasi Ketat: NIS Wajib Terdaftar di Tabel MASTER_SISWA
+      if (!student) {
+        playBeepReject();
+        showToast(`NIS '${cleanNis}' TIDAK DITEMUKAN di tabel MASTER_SISWA!`, "error");
+
+        const badge = document.getElementById("scan-feedback-badge");
+        badge.innerText = "DITOLAK";
+        badge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-300 font-bold border border-red-500/30";
+
+        const detailView = document.getElementById("siswa-detail-view");
+        detailView.innerHTML = `
+          <div class="p-3 bg-red-950/40 border border-red-500/30 rounded-xl text-left">
+            <span class="text-xs text-red-400 font-bold block">❌ NIS: ${cleanNis} Tidak Terdaftar</span>
+            <span class="text-[11px] text-slate-300 block mt-1">Data siswa ini belum ada di tab <b>MASTER_SISWA</b> pada Spreadsheet DATABASE TK.</span>
+            <span class="text-[10px] text-slate-400 block mt-1">Silakan tambahkan data di tab MASTER_SISWA lalu klik tombol <b>Sinkron</b>.</span>
+          </div>
+        `;
+        return;
+      }
+
+      playBeepSuccess();
+      const now = new Date();
       const recordId = "SIS-" + now.getFullYear() + 
         String(now.getMonth() + 1).padStart(2, '0') + 
         String(now.getDate()).padStart(2, '0') + "-" + 
@@ -838,15 +945,15 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       const tanggal = now.toISOString().split("T")[0];
       const timeStr = now.toTimeString().split(" ")[0];
 
-      // Exact Tab "ABSENSI SISWA" Column Schema:
+      // Schema Tab "ABSENSI SISWA":
       // TIMESTAMP, ID_ABSENSI_SISWA, TANGGAL, NIS, NAMA_SISWA, KELOMPOK, STATUS, KETERANGAN
       const record = {
         TIMESTAMP: now.toISOString(),
         ID_ABSENSI_SISWA: recordId,
         TANGGAL: tanggal,
-        NIS: nisCode,
+        NIS: cleanNis,
         NAMA_SISWA: student.nama,
-        KELOMPOK: student.kelompok,
+        KELOMPOK: student.kelompok || "TK",
         STATUS: "Hadir",
         KETERANGAN: "Scan Barcode HP jam " + timeStr
       };
@@ -855,7 +962,6 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       updateBadgeCounts();
       renderStudentResult(record);
 
-      // Celebration Confetti
       try {
         confetti({ particleCount: 30, spread: 55, origin: { y: 0.6 } });
       } catch (e) {}
@@ -930,31 +1036,24 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       const distance = calculateHaversineMeters(coords.latitude, coords.longitude, schoolLat, schoolLng);
       const accuracy = coords.accuracy || 999;
 
-      // ==========================================================
-      // ANTI-FAKE GPS MULTI-TIER HEURISTIC VERIFICATION
-      // ==========================================================
       let isSpoofed = false;
       let spoofReason = "Hardware GPS Asli";
 
-      // 1. Android mock location indicator (supported in modern webview)
       if (pos.coords.isMock === true) {
         isSpoofed = true;
         spoofReason = "Fake GPS Terdeteksi (Mock Flag)";
       }
 
-      // 2. Impossible fixed accuracy detection: Mock apps frequently output exact 0 or 1.0 meter
       if (accuracy < 0.5) {
         isSpoofed = true;
         spoofReason = "Akurasi Tidak Wajar (< 0.5m)";
       }
 
-      // 3. Teleportation anomaly test (detect jumping across coordinates in milliseconds)
       if (lastKnownLat !== null && lastKnownLng !== null && lastPositionTimestamp > 0) {
         const timeDeltaSeconds = (nowTs - lastPositionTimestamp) / 1000;
         if (timeDeltaSeconds > 0) {
           const deltaMeters = calculateHaversineMeters(lastKnownLat, lastKnownLng, coords.latitude, coords.longitude);
           const calculatedSpeedKmh = (deltaMeters / timeDeltaSeconds) * 3.6;
-          // If speed exceeds 120 km/h within school grounds without altitude changes
           if (calculatedSpeedKmh > 150) {
             isSpoofed = true;
             spoofReason = "Lompatan Koordinat Terdeteksi (" + Math.round(calculatedSpeedKmh) + " km/h)";
@@ -966,11 +1065,9 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       lastKnownLng = coords.longitude;
       lastPositionTimestamp = nowTs;
 
-      // Geofence Radius Verification
       const isInsideSchool = distance <= allowedRadius;
       isGpsPass = isInsideSchool && !isSpoofed;
 
-      // Update UI elements
       document.getElementById("gps-val-distance").innerText = Math.round(distance) + " meter";
       document.getElementById("gps-val-acc").innerText = Math.round(accuracy) + " meter";
       document.getElementById("gps-val-mock").innerText = spoofReason;
@@ -991,7 +1088,6 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
         submitBtn.disabled = true;
       }
 
-      // Update live watermark line
       document.getElementById("wm-gps-line").innerText = `GPS: ${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)} (${Math.round(distance)}m)`;
     }
 
@@ -1075,19 +1171,17 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
 
-      // Mirror canvas back for selfie perspective
       ctx.save();
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       ctx.restore();
 
-      // Hard-burn watermark into raw pixel data
       const now = new Date();
       const timeStr = now.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB";
       const guruVal = document.getElementById("select-guru").value.split("|");
-      const nug = guruVal[0];
-      const nama = guruVal[1];
+      const nug = guruVal[0] || "-";
+      const nama = guruVal[1] || "-";
 
       const latLngStr = currentGeoCoords
         ? `${currentGeoCoords.latitude.toFixed(6)}, ${currentGeoCoords.longitude.toFixed(6)}`
@@ -1095,22 +1189,18 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
 
       const schoolDistStr = document.getElementById("gps-val-distance").innerText;
 
-      // Dark Banner Bar at Bottom of Canvas
       const barH = 110;
       ctx.fillStyle = "rgba(2, 6, 23, 0.82)";
       ctx.fillRect(0, canvas.height - barH, canvas.width, barH);
 
-      // Title & Teacher Info
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 24px 'Plus Jakarta Sans', sans-serif";
-      ctx.fillText(`PRESENSI GURU TK • ${nug} - ${nama}`, 25, canvas.height - 70);
+      ctx.fillText(`TK PGRI PAKANDANGAN SANGRA • ${nug} - ${nama}`, 25, canvas.height - 70);
 
-      // Time & Validation
       ctx.fillStyle = "#34d399";
       ctx.font = "19px 'JetBrains Mono', monospace";
       ctx.fillText(`WAKTU: ${timeStr} | RADIUS: ${schoolDistStr}`, 25, canvas.height - 42);
 
-      // Raw Coordinates & Security Stamp
       ctx.fillStyle = "#94a3b8";
       ctx.font = "16px 'JetBrains Mono', monospace";
       ctx.fillText(`KOORDINAT: ${latLngStr} (VERIFIKASI ANTI-FAKE: ${isGpsPass ? 'VALID' : 'INVALID'})`, 25, canvas.height - 18);
@@ -1159,8 +1249,8 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
 
       const now = new Date();
       const guruData = document.getElementById("select-guru").value.split("|");
-      const nug = guruData[0];
-      const nama = guruData[1];
+      const nug = guruData[0] || "-";
+      const nama = guruData[1] || "Guru TK";
       const tipe = document.getElementById("guru-tipe").value;
       const status = document.getElementById("guru-status-opt").value;
       const ketUser = document.getElementById("guru-keterangan-txt").value.trim();
@@ -1172,8 +1262,6 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
         String(now.getDate()).padStart(2, '0') + "-" + 
         Math.floor(1000 + Math.random() * 9000);
 
-      // Exact Tab "ABSENSI GURU" Column Schema:
-      // TIMESTAMP, ID_ABSENSI_GURU, TANGGAL, NUG, NAMA_GURU, STATUS, KETERANGAN, JAM_DATANG, JAM_PULANG, LINK_BUKTI_ABSEN
       const record = {
         TIMESTAMP: now.toISOString(),
         ID_ABSENSI_GURU: recordId,
@@ -1192,7 +1280,6 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       updateBadgeCounts();
       retakeTeacherPhoto();
 
-      // Celebration Feedback
       try {
         confetti({ particleCount: 35, spread: 65, origin: { y: 0.6 } });
       } catch (e) {}
@@ -1203,7 +1290,8 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
     }
 
     async function syncPayloadToGas(actionName, payload) {
-      const gasUrl = document.getElementById("gas-url-input").value.trim();
+      const gasInput = document.getElementById("gas-url-input");
+      const gasUrl = (gasInput ? gasInput.value.trim() : "") || CONFIG_SEKOLAH.gasUrl;
       if (!gasUrl) {
         console.warn("GAS URL belum diisi. Data tersimpan di memori lokal ponsel.");
         return;
@@ -1212,7 +1300,6 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       try {
         const requestBody = Object.assign({ action: actionName }, payload);
 
-        // Send via text/plain to prevent CORS preflight block in Apps Script Web App
         const res = await fetch(gasUrl, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -1239,20 +1326,123 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
 
       showToast("Menguji koneksi ke DATABASE TK...", "info");
       try {
-        const res = await fetch(gasUrl, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "PING" })
-        });
+        const res = await fetch(gasUrl, { method: "GET" });
         const result = await res.json();
-        if (result.success) {
+        
+        if (result.status === "ONLINE") {
+          const tabSiswa = result.tabsReady.absensiSiswa ? "Siswa: OK" : "Siswa: Dibuat Otomatis";
+          const tabGuru = result.tabsReady.absensiGuru ? "Guru: OK" : "Guru: Dibuat Otomatis";
+          const tabMaster = result.tabsReady.masterGuru ? "Master: OK" : "Master: Belum Ada";
+          showToast(`Terhubung ke ${result.spreadsheetName}! (${tabMaster})`, "success");
+          loadMasterDataFromGas(false);
+        } else if (result.success) {
           showToast("Sukses: " + result.message, "success");
+          loadMasterDataFromGas(false);
         } else {
-          showToast("Gagal: " + (result.error || "Respons tidak valid"), "error");
+          showToast("Respons server: " + (result.message || "Online"), "info");
         }
       } catch (e) {
-        showToast("Gagal menghubungi URL Web App: " + e.message, "error");
+        try {
+          const resPost = await fetch(gasUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "PING" })
+          });
+          const resData = await resPost.json();
+          if (resData.success) {
+            showToast("Koneksi berhasil terverifikasi (POST)!", "success");
+            loadMasterDataFromGas(false);
+          } else {
+            showToast("Server merespons: " + (resData.error || "Gagal"), "error");
+          }
+        } catch (postErr) {
+          showToast("Gagal menghubungi URL Web App: Pastikan izin 'Anyone' sudah dipilih saat Deploy.", "error");
+        }
       }
+    }
+
+    async function loadMasterDataFromGas(showToastAlert = false) {
+      const gasInput = document.getElementById("gas-url-input");
+      const gasUrl = (gasInput ? gasInput.value.trim() : "") || CONFIG_SEKOLAH.gasUrl;
+
+      if (!gasUrl) {
+        if (showToastAlert) {
+          showToast("Masukkan URL Web App Google Apps Script di tab Setelan!", "error");
+        }
+        renderGuruSelect([]);
+        return;
+      }
+
+      if (showToastAlert) {
+        showToast("Mengunduh data MASTER_GURU dan MASTER_SISWA...", "info");
+      }
+
+      try {
+        let fetchedData = null;
+        try {
+          const res = await fetch(gasUrl + "?action=GET_MASTER");
+          fetchedData = await res.json();
+        } catch (getErr) {
+          const resPost = await fetch(gasUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "GET_MASTER" })
+          });
+          fetchedData = await resPost.json();
+        }
+
+        if (fetchedData && fetchedData.success) {
+          // 1. Sinkronisasi Data Guru
+          if (fetchedData.guru && Array.isArray(fetchedData.guru)) {
+            masterGuruList = fetchedData.guru;
+            renderGuruSelect(masterGuruList);
+          }
+
+          // 2. Sinkronisasi Data Siswa (100% dari TAB MASTER_SISWA)
+          if (fetchedData.siswa && typeof fetchedData.siswa === "object") {
+            studentDirectory = fetchedData.siswa;
+            const countSiswa = Object.keys(studentDirectory).length;
+            const labelEl = document.getElementById("label-siswa-count");
+            if (labelEl) {
+              labelEl.innerText = `${countSiswa} Siswa Terdaftar (MASTER_SISWA)`;
+            }
+          }
+
+          if (showToastAlert) {
+            const jmlGuru = masterGuruList.length;
+            const jmlSiswa = Object.keys(studentDirectory).length;
+            showToast(`Sukses sinkron: ${jmlGuru} Guru & ${jmlSiswa} Siswa dari Database TK!`, "success");
+          }
+        } else {
+          renderGuruSelect([]);
+          if (showToastAlert) {
+            showToast("Gagal membaca master data: Spreadsheet belum lengkap", "error");
+          }
+        }
+      } catch (err) {
+        console.warn("Gagal load Master Data:", err);
+        renderGuruSelect([]);
+        if (showToastAlert) {
+          showToast("Gagal memuat Master Data: " + err.message, "error");
+        }
+      }
+    }
+
+    function renderGuruSelect(list) {
+      const guruSelect = document.getElementById("select-guru");
+      if (!guruSelect) return;
+
+      if (!list || list.length === 0) {
+        guruSelect.innerHTML = `
+          <option value="">-- Belum ada data guru. Klik tombol 'Sinkron Data Guru' --</option>
+        `;
+        return;
+      }
+
+      guruSelect.innerHTML = list.map(g => {
+        const jabStr = g.jabatan ? ` (${g.jabatan})` : "";
+        return `<option value="${g.nug}|${g.nama}">${g.nug} - ${g.nama}${jabStr}</option>`;
+      }).join("");
     }
 
     function setLogTab(type) {
@@ -1261,11 +1451,11 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       const btnGuru = document.getElementById("btn-tab-log-guru");
 
       if (type === "siswa") {
-        btnSiswa.className = "py-2 rounded-xl font-bold bg-brand-500 text-slate-950 transition";
-        btnGuru.className = "py-2 rounded-xl font-bold text-slate-400 hover:text-white transition";
+        btnSiswa.className = "py-2 rounded-xl font-bold bg-brand-500 text-slate-950 transition flex items-center justify-center gap-1.5";
+        btnGuru.className = "py-2 rounded-xl font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5";
       } else {
-        btnGuru.className = "py-2 rounded-xl font-bold bg-indigo-500 text-white transition";
-        btnSiswa.className = "py-2 rounded-xl font-bold text-slate-400 hover:text-white transition";
+        btnGuru.className = "py-2 rounded-xl font-bold bg-indigo-500 text-white transition flex items-center justify-center gap-1.5";
+        btnSiswa.className = "py-2 rounded-xl font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5";
       }
       renderLogListView();
     }
@@ -1317,8 +1507,10 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
     }
 
     function updateBadgeCounts() {
-      document.getElementById("count-siswa-badge").innerText = logsSiswa.length;
-      document.getElementById("count-guru-badge").innerText = logsGuru.length;
+      const bSiswa = document.getElementById("count-siswa-badge");
+      const bGuru = document.getElementById("count-guru-badge");
+      if (bSiswa) bSiswa.innerText = logsSiswa.length;
+      if (bGuru) bGuru.innerText = logsGuru.length;
     }
 
     function exportCsvDirect() {
@@ -1344,31 +1536,6 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       link.click();
       document.body.removeChild(link);
       showToast("File CSV berhasil diunduh ke ponsel", "success");
-    }
-
-    function openQuickAddStudentModal() {
-      document.getElementById("modal-quick-student").classList.remove("hidden");
-    }
-
-    function closeQuickAddStudentModal() {
-      document.getElementById("modal-quick-student").classList.add("hidden");
-    }
-
-    function saveQuickStudent() {
-      const nis = document.getElementById("modal-new-nis").value.trim();
-      const nama = document.getElementById("modal-new-nama").value.trim();
-      const kelompok = document.getElementById("modal-new-kelompok").value;
-
-      if (!nis || !nama) {
-        showToast("Lengkapi NIS dan Nama siswa!", "error");
-        return;
-      }
-
-      STUDENT_DIRECTORY[nis] = { nama, kelompok };
-      closeQuickAddStudentModal();
-      document.getElementById("modal-new-nis").value = "";
-      document.getElementById("modal-new-nama").value = "";
-      showToast(`Siswa ${nama} (${nis}) berhasil didaftarkan!`, "success");
     }
 
     function copyGasCode() {
@@ -1402,7 +1569,6 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       }, 3200);
     }
 
-    // Live clock ticker
     setInterval(() => {
       const clockEl = document.getElementById("live-clock");
       const wmTimeEl = document.getElementById("wm-time-line");
@@ -1411,6 +1577,27 @@ function uploadSelfieToDrive(base64Data, nug, nama) {
       if (clockEl) clockEl.innerText = timeStr;
       if (wmTimeEl) wmTimeEl.innerText = now.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB";
     }, 1000);
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if (CONFIG_SEKOLAH.gasUrl) {
+        const el = document.getElementById("gas-url-input");
+        if (el) el.value = CONFIG_SEKOLAH.gasUrl;
+      }
+      if (CONFIG_SEKOLAH.lat) {
+        const el = document.getElementById("school-lat-input");
+        if (el) el.value = CONFIG_SEKOLAH.lat;
+      }
+      if (CONFIG_SEKOLAH.lng) {
+        const el = document.getElementById("school-lng-input");
+        if (el) el.value = CONFIG_SEKOLAH.lng;
+      }
+      if (CONFIG_SEKOLAH.radius) {
+        const el = document.getElementById("school-rad-input");
+        if (el) el.value = CONFIG_SEKOLAH.radius;
+      }
+
+      loadMasterDataFromGas(false);
+    });
   </script>
 </body>
 </html>
